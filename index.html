@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X文章转公众号格式工具</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo">🐦 → 📱</div>
+                <h1>X文章转公众号格式</h1>
+                <p class="subtitle">智能转换 · 自动下载 · 一键复制</p>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-badge step-1">
+                        <span class="step-number">01</span>
+                        <span class="step-label">获取内容</span>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="input-group">
+                        <label for="xUrl">📌 X文章链接</label>
+                        <input type="text" id="xUrl" placeholder="https://x.com/username/status/1234567890">
+                    </div>
+                    
+                    <button id="fetchBtn" class="btn primary">
+                        <span class="btn-icon">📥</span>
+                        获取文章
+                    </button>
+
+                    <div class="editor-group">
+                        <label for="markdownEditor">📝 Markdown 编辑器</label>
+                        <textarea id="markdownEditor" placeholder="获取的文章内容将显示在这里，你也可以直接粘贴Markdown内容..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-section">
+                <div class="step-header">
+                    <div class="step-badge step-2">
+                        <span class="step-number">02</span>
+                        <span class="step-label">预览复制</span>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="preview-header">
+                        <h2>👀 预览效果</h2>
+                        <div class="preview-actions">
+                            <button id="copyBtn" class="btn success" disabled>
+                                <span class="btn-icon">📋</span>
+                                一键复制
+                            </button>
+                            <button id="clearBtn" class="btn danger">
+                                <span class="btn-icon">🗑️</span>
+                                清空
+                            </button>
+                        </div>
+                    </div>
+                    <div id="preview" class="preview-content">
+                        <div class="placeholder">
+                            <div class="placeholder-icon">🎨</div>
+                            <p>转换后的内容将在这里预览</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tips">
+            <h3>💡 使用流程</h3>
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="flow-dot">1</div>
+                    <div class="flow-text">粘贴X文章链接</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-dot">2</div>
+                    <div class="flow-text">等待自动下载图片</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-dot">3</div>
+                    <div class="flow-text">点击"一键复制"</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-dot">4</div>
+                    <div class="flow-text">粘贴到公众号编辑器</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

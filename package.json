@@ -1,0 +1,20 @@
+{
+  "name": "x-to-wechat",
+  "version": "1.0.0",
+  "description": "X文章转公众号格式工具 - 无需API密钥，一键转换",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "twitter",
+    "x",
+    "wechat",
+    "markdown",
+    "converter"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.22.1"
+  }
+}
