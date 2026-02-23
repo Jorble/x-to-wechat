@@ -4,15 +4,19 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 静态文件服务
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, {
+  index: 'index.html',
+  setHeaders: (res, path, stat) => {
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 
-// 健康检查
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'X文章转公众号格式工具运行正常' });
 });
 
-// SPA路由支持
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
