@@ -67,6 +67,8 @@ class XToWechatConverter {
     }
 
     parseResponseToMarkdown(text) {
+        if (!text) return '';
+        
         let markdown = text;
         
         markdown = markdown.replace(/^Title:.*$/m, '');
@@ -85,6 +87,8 @@ class XToWechatConverter {
     }
 
     cleanupMarkdown(markdown) {
+        if (!markdown) return '';
+        
         let cleaned = markdown;
         
         cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
@@ -116,7 +120,7 @@ class XToWechatConverter {
             
             this.showToast('🎉 格式转换完成！可以一键复制了');
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error in convertToWechat:', error);
             this.showToast('转换失败：' + error.message, 'error');
             
             const fetchBtn = document.getElementById('fetchBtn');
@@ -126,6 +130,8 @@ class XToWechatConverter {
     }
 
     async parseMarkdownForWechat(markdown) {
+        if (!markdown) return '';
+        
         const lines = markdown.split('\n');
         let result = [];
         let i = 0;
@@ -133,12 +139,12 @@ class XToWechatConverter {
         const totalImages = (markdown.match(/!\[/g) || []).length;
 
         while (i < lines.length) {
-            const line = lines[i];
+            const line = lines[i] || '';
             
             const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
             if (headerMatch) {
                 const level = headerMatch[1].length;
-                const content = headerMatch[2];
+                const content = headerMatch[2] || '';
                 result.push(this.renderHeader(content, level));
                 i++;
                 continue;
@@ -146,11 +152,11 @@ class XToWechatConverter {
 
             const codeBlockMatch = line.match(/^```(\w*)$/);
             if (codeBlockMatch) {
-                const lang = codeBlockMatch[1];
+                const lang = codeBlockMatch[1] || '';
                 const codeLines = [];
                 i++;
                 while (i < lines.length && lines[i] !== '```') {
-                    codeLines.push(lines[i]);
+                    codeLines.push(lines[i] || '');
                     i++;
                 }
                 i++;
@@ -177,7 +183,7 @@ class XToWechatConverter {
                 
                 imageCount++;
                 this.showToast(`正在下载图片 ${imageCount}/${totalImages}...`, 'info');
-                const imageData = await this.downloadAndConvertImage(url);
+                const imageData = await this.downloadAndConvertImage(url || '');
                 result.push(this.renderImage(imageData, alt));
                 
                 i++;
@@ -193,7 +199,7 @@ class XToWechatConverter {
 
             const quoteMatch = line.match(/^>\s+(.+)$/);
             if (quoteMatch) {
-                result.push(this.renderQuote(quoteMatch[1]));
+                result.push(this.renderQuote(quoteMatch[1] || ''));
                 i++;
                 continue;
             }
@@ -221,6 +227,8 @@ class XToWechatConverter {
     }
 
     async downloadAndConvertImage(url) {
+        if (!url) return '';
+        
         try {
             const response = await fetch(url);
             if (!response.ok) {
@@ -230,7 +238,7 @@ class XToWechatConverter {
             
             const reader = new FileReader();
             return new Promise((resolve, reject) => {
-                reader.onloadend = () => resolve(reader.result);
+                reader.onloadend = () => resolve(reader.result || '');
                 reader.onerror = reject;
                 reader.readAsDataURL(blob);
             });
@@ -247,13 +255,13 @@ class XToWechatConverter {
         let i = startIndex;
 
         while (i < lines.length) {
-            const line = lines[i];
+            const line = lines[i] || '';
             const orderedMatch = line.match(/^(\d+)\.\s+(.+)$/);
             const unorderedMatch = line.match(/^[-*]\s+(.+)$/);
 
             if (orderedMatch || unorderedMatch) {
                 const currentType = orderedMatch ? 'ordered' : 'unordered';
-                const content = (orderedMatch ? orderedMatch[2] : unorderedMatch[2]);
+                const content = (orderedMatch ? orderedMatch[2] : unorderedMatch[2]) || '';
 
                 if (!type) {
                     type = currentType;
@@ -277,6 +285,8 @@ class XToWechatConverter {
     }
 
     parseInline(text) {
+        if (!text) return '';
+        
         let html = text;
         
         html = html.replace(/&/g, '&amp;');
@@ -297,7 +307,7 @@ class XToWechatConverter {
     renderHeader(content, level) {
         const fontSize = Math.max(24, 32 - (level - 1) * 4);
         const colors = ['#333333', '#333333', '#4a5568', '#4a5568', '#718096', '#718096'];
-        const parsedContent = this.parseInline(content);
+        const parsedContent = this.parseInline(content || '');
         
         if (level === 1) {
             return `<section style="margin: 30px 0; padding-bottom: 20px; border-bottom: 2px solid #e1e8ed;">
@@ -309,12 +319,12 @@ class XToWechatConverter {
     }
 
     renderParagraph(text) {
-        const parsedContent = this.parseInline(text);
+        const parsedContent = this.parseInline(text || '');
         return `<p style="margin: 15px 0; line-height: 1.8; color: #333; font-size: 16px;">${parsedContent}</p>`;
     }
 
     renderCodeBlock(code, lang) {
-        const escapedCode = code
+        const escapedCode = (code || '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
@@ -329,7 +339,7 @@ class XToWechatConverter {
 
     renderImage(src, alt) {
         return `<section style="margin: 20px 0;">
-            <img src="${src}" alt="${alt}" style="width: 100%; max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+            <img src="${src || ''}" alt="${alt || ''}" style="width: 100%; max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
         </section>`;
     }
 
@@ -338,13 +348,15 @@ class XToWechatConverter {
         const tag = type === 'ordered' ? 'ol' : 'ul';
         const style = type === 'ordered' ? 'list-style-type: decimal;' : 'list-style-type: disc;';
         
+        const itemsHtml = (items || []).map(item => `<li style="margin: 8px 0; line-height: 1.6;">${item}</li>`).join('');
+        
         return `<${tag} style="margin: 15px 0; padding-left: 25px; color: #333; ${style}">
-            ${items.map(item => `<li style="margin: 8px 0; line-height: 1.6;">${item}</li>`).join('')}
+            ${itemsHtml}
         </${tag}>`;
     }
 
     renderQuote(text) {
-        const parsedContent = this.parseInline(text);
+        const parsedContent = this.parseInline(text || '');
         return `<blockquote style="margin: 20px 0; padding: 15px 20px; background: #f6f8fa; border-left: 4px solid #1DA1F2; color: #666; font-style: italic;">${parsedContent}</blockquote>`;
     }
 
