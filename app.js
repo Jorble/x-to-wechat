@@ -210,13 +210,15 @@ class XToWechatConverter {
             }
 
             const orderedMatch = line.match(/^(\d+)\.\s+(.+)$/);
-            const unorderedMatch = line.match(/^[-*]\s+(.+)$/);
+            const unorderedMatch = line.match(/^\s*[*]\s+(.+)$/);
             
-            if (orderedMatch || unorderedMatch) {
-                const listItems = this.parseList(lines, i);
-                result.push(this.renderList(listItems));
-                i = listItems.endIndex;
-                continue;
+            if (unorderedMatch || orderedMatch) {
+                const listItems = this.parseListSmart(lines, i, unorderedMatch ? 'unordered' : 'ordered');
+                if (listItems.items.length > 0) {
+                    result.push(this.renderList(listItems));
+                    i = listItems.endIndex;
+                    continue;
+                }
             }
 
             result.push(this.renderParagraph(line));
@@ -224,6 +226,63 @@ class XToWechatConverter {
         }
 
         return result.join('\n');
+    }
+
+    parseListSmart(lines, startIndex, type) {
+        const items = [];
+        let i = startIndex;
+        const marker = type === 'unordered' ? '*' : '\\d+\\.';
+
+        const prevLine = lines[Math.max(0, i - 1)] || '';
+        const hasListContext = prevLine.includes('：') || 
+                              prevLine.includes(':') || 
+                              prevLine.includes('例子') ||
+                              prevLine.includes('例如') ||
+                              prevLine.includes('包括') ||
+                              prevLine.includes('：') ||
+                              prevLine.includes('好处') ||
+                              prevLine.includes('原因') ||
+                              prevLine.includes('结果');
+
+        while (i < lines.length) {
+            const line = lines[i] || '';
+            
+            let match;
+            if (type === 'unordered') {
+                match = line.match(/^\s*[*]\s+(.+)$/);
+            } else {
+                match = line.match(/^(\d+)\.\s+(.+)$/);
+            }
+            
+            if (match) {
+                const content = (type === 'unordered' ? match[1] : match[2]) || '';
+                
+                if (items.length === 0 && !hasListContext && content.length < 15) {
+                    if (!content.includes('：') && !content.includes('：')) {
+                        return { items: [], endIndex: startIndex };
+                    }
+                }
+                
+                items.push(this.parseInline(content));
+                i++;
+            } else if (line.trim() === '') {
+                i++;
+                if (i < lines.length) {
+                    const nextLine = lines[i] || '';
+                    if (type === 'unordered' && nextLine.match(/^\s*[*]\s+/)) {
+                        continue;
+                    }
+                    if (type === 'ordered' && nextLine.match(/^\d+\.\s+/)) {
+                        continue;
+                    }
+                }
+                break;
+            } else {
+                break;
+            }
+        }
+
+        return { items, type, endIndex: i };
     }
 
     async downloadAndConvertImage(url) {
