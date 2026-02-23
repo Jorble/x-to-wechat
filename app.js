@@ -12,7 +12,6 @@ class XToWechatConverter {
     bindEvents() {
         document.getElementById('fetchBtn').addEventListener('click', () => this.fetchXArticle());
         document.getElementById('copyBtn').addEventListener('click', () => this.copyToClipboard());
-        document.getElementById('clearBtn').addEventListener('click', () => this.clearAll());
     }
 
     async fetchXArticle() {
@@ -26,7 +25,7 @@ class XToWechatConverter {
 
         const fetchBtn = document.getElementById('fetchBtn');
         const originalText = fetchBtn.innerHTML;
-        fetchBtn.innerHTML = '<span class="loading"></span> 获取中...';
+        fetchBtn.innerHTML = '<span class="loading"></span> 提取中...';
         fetchBtn.disabled = true;
 
         try {
@@ -40,18 +39,26 @@ class XToWechatConverter {
             const text = await response.text();
             const markdown = this.parseResponseToMarkdown(text);
             
-            document.getElementById('markdownEditor').value = markdown;
-            
-            fetchBtn.innerHTML = '<span class="loading"></span> 转换中...';
+            this.markdownText = markdown;
             this.showToast('文章获取成功！正在转换格式...');
             
-            setTimeout(() => {
-                this.convertToWechat();
-            }, 500);
+            this.formattedHTML = await this.parseMarkdownForWechat(this.markdownText);
+            
+            const preview = document.getElementById('preview');
+            preview.innerHTML = this.formattedHTML;
+            
+            document.getElementById('copyBtn').disabled = false;
+            
+            fetchBtn.innerHTML = '<span class="btn-icon">📥</span> 重新提取';
+            fetchBtn.disabled = false;
+            
+            this.showToast('🎉 转换完成！可以一键复制了');
             
         } catch (error) {
             console.error('Error:', error);
-            this.showToast('获取文章失败，请检查链接是否正确', 'error');
+            this.showToast('提取文章失败，请检查链接是否正确', 'error');
+            
+            const fetchBtn = document.getElementById('fetchBtn');
             fetchBtn.innerHTML = originalText;
             fetchBtn.disabled = false;
         }
@@ -96,37 +103,6 @@ class XToWechatConverter {
         cleaned = cleaned.replace(/^>[\s\n]+关于作者/gim, '\n\n---\n\n## 关于作者');
         
         return cleaned.trim();
-    }
-
-    async convertToWechat() {
-        this.markdownText = document.getElementById('markdownEditor').value.trim();
-        
-        if (!this.markdownText) {
-            this.showToast('请先获取或输入内容', 'error');
-            return;
-        }
-
-        try {
-            this.formattedHTML = await this.parseMarkdownForWechat(this.markdownText);
-            
-            const preview = document.getElementById('preview');
-            preview.innerHTML = this.formattedHTML;
-            
-            document.getElementById('copyBtn').disabled = false;
-            
-            const fetchBtn = document.getElementById('fetchBtn');
-            fetchBtn.innerHTML = '<span class="btn-icon">📥</span> 获取文章';
-            fetchBtn.disabled = false;
-            
-            this.showToast('🎉 格式转换完成！可以一键复制了');
-        } catch (error) {
-            console.error('Error in convertToWechat:', error);
-            this.showToast('转换失败：' + error.message, 'error');
-            
-            const fetchBtn = document.getElementById('fetchBtn');
-            fetchBtn.innerHTML = '<span class="btn-icon">📥</span> 获取文章';
-            fetchBtn.disabled = false;
-        }
     }
 
     async parseMarkdownForWechat(markdown) {
@@ -444,21 +420,6 @@ class XToWechatConverter {
             console.error('Copy failed:', err);
             this.showToast('复制失败，请手动复制', 'error');
         });
-    }
-
-    clearAll() {
-        document.getElementById('xUrl').value = '';
-        document.getElementById('markdownEditor').value = '';
-        document.getElementById('preview').innerHTML = `
-            <div class="placeholder">
-                <div class="placeholder-icon">🎨</div>
-                <p>转换后的内容将在这里预览</p>
-            </div>
-        `;
-        document.getElementById('copyBtn').disabled = true;
-        this.markdownText = '';
-        this.formattedHTML = '';
-        this.showToast('已清空所有内容');
     }
 
     showToast(message, type = 'success') {
