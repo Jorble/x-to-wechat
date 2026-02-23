@@ -130,7 +130,7 @@ class XToWechatConverter {
         let result = [];
         let i = 0;
         let imageCount = 0;
-        const totalImages = (markdown.match(/!\[\]/g) || []).length;
+        const totalImages = (markdown.match(/!\[/g) || []).length;
 
         while (i < lines.length) {
             const line = lines[i];
@@ -160,8 +160,20 @@ class XToWechatConverter {
 
             const imageMatch = line.match(/^!\[([^\]]*)\]\((https:\/\/pbs\.twimg\.com\/[^)]+)\)$/);
             if (imageMatch) {
-                const alt = imageMatch[1];
-                const url = imageMatch[2].replace(/(name=)(small|medium)/, '$1large');
+                const alt = imageMatch[1] || '';
+                let url = imageMatch[2] || '';
+                
+                if (url) {
+                    if (url.includes('name=')) {
+                        url = url.replace(/(name=)(small|medium|900x900)/, '$1large');
+                    } else {
+                        if (!url.includes('?')) {
+                            url += '?name=large';
+                        } else {
+                            url += '&name=large';
+                        }
+                    }
+                }
                 
                 imageCount++;
                 this.showToast(`正在下载图片 ${imageCount}/${totalImages}...`, 'info');
