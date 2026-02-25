@@ -2,7 +2,28 @@ class XToWechatConverter {
     constructor() {
         this.markdownText = '';
         this.formattedHTML = '';
+        this.isMobile = this.detectMobileDevice();
         this.init();
+    }
+    
+    detectMobileDevice() {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    }
+    
+    shouldEmbedImages() {
+        const selectedMode = document.querySelector('input[name="imageMode"]:checked');
+        const mode = selectedMode ? selectedMode.value : 'auto';
+        
+        switch (mode) {
+            case 'embed':
+                return true;
+            case 'link':
+                return false;
+            case 'auto':
+            default:
+                return !this.isMobile;
+        }
     }
 
     init() {
@@ -86,7 +107,7 @@ class XToWechatConverter {
         markdown = markdown.replace(/^Conversation\s*-+$/m, '');
         markdown = markdown.replace(/^-+$/gm, '');
         
-        markdown = markdown.replace(/\[!\[Image.*?\]\((https:\/\/pbs\.twimg\.com\/[^)]+?)\)\]\(https:\/\/x\.com\/[^)]+\)/g, '![]($1)');
+        markdown = markdown.replace(/\[!\[Image.*?\]\((https:\/\/[^)]+?)\)\]\(https:\/\/(x\.com|twitter\.com)\/[^)]+\)/g, '![]($1)');
         
         markdown = markdown.trim();
         
@@ -140,27 +161,41 @@ class XToWechatConverter {
                 continue;
             }
 
-            const imageMatch = line.match(/^!\[([^\]]*)\]\((https:\/\/pbs\.twimg\.com\/[^)]+)\)$/);
+            const imageMatch = line.match(/^!\[([^\]]*)\]\((https:\/\/[^)]+)\)$/);
             if (imageMatch) {
                 const alt = imageMatch[1] || '';
                 let url = imageMatch[2] || '';
                 
+                console.log('Processing image URL:', url);
+                
                 if (url) {
-                    if (url.includes('name=')) {
-                        url = url.replace(/(name=)(small|medium|900x900)/, '$1large');
-                    } else {
-                        if (!url.includes('?')) {
-                            url += '?name=large';
+                    if (url.includes('pbs.twimg.com') || url.includes('video.twimg.com')) {
+                        if (url.includes('name=')) {
+                            url = url.replace(/(name=)(small|medium|900x900)/, '$1large');
                         } else {
-                            url += '&name=large';
+                            if (!url.includes('?')) {
+                                url += '?name=large';
+                            } else {
+                                url += '&name=large';
+                            }
                         }
                     }
                 }
                 
+                console.log('Optimized image URL:', url);
+                
                 imageCount++;
-                this.showToast(`正在下载图片 ${imageCount}/${totalImages}...`, 'info');
-                const imageData = await this.downloadAndConvertImage(url || '');
-                result.push(this.renderImage(imageData, alt));
+                
+                const useEmbed = this.shouldEmbedImages();
+                
+                if (useEmbed) {
+                    this.showToast(`正在下载图片 ${imageCount}/${totalImages}...`, 'info');
+                    const imageData = await this.downloadAndConvertImage(url || '');
+                    result.push(this.renderImage(imageData, alt));
+                } else {
+                    console.log('Using original image URL for mobile compatibility');
+                    result.push(this.renderImage(url, alt));
+                }
                 
                 i++;
                 continue;
@@ -264,21 +299,50 @@ class XToWechatConverter {
     async downloadAndConvertImage(url) {
         if (!url) return '';
         
+        console.log('Attempting to download image:', url);
+        
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                mode: 'cors',
+                credentials: 'omit'
+            });
+            
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                console.warn('Image fetch failed with status:', response.status);
+                throw new Error(`Network response was not ok: ${response.status}`);
             }
+            
             const blob = await response.blob();
+            console.log('Image downloaded successfully, size:', blob.size, 'bytes');
             
             const reader = new FileReader();
             return new Promise((resolve, reject) => {
-                reader.onloadend = () => resolve(reader.result || '');
+                reader.onloadend = () => {
+                    const result = reader.result || '';
+                    console.log('Image converted to DataURL, length:', result.length);
+                    resolve(result);
+                };
                 reader.onerror = reject;
                 reader.readAsDataURL(blob);
             });
         } catch (error) {
-            console.error('Image download failed:', error);
+            console.error('Image download failed for URL:', url, 'Error:', error);
+            
+            try {
+                console.log('Attempting fallback fetch without CORS...');
+                const fallbackResponse = await fetch(url);
+                if (fallbackResponse.ok) {
+                    const blob = await fallbackResponse.blob();
+                    const reader = new FileReader();
+                    return new Promise((resolve) => {
+                        reader.onloadend = () => resolve(reader.result || '');
+                        reader.readAsDataURL(blob);
+                    });
+                }
+            } catch (fallbackError) {
+                console.error('Fallback fetch also failed:', fallbackError);
+            }
+            
             this.showToast('图片下载失败，将使用原链接', 'error');
             return url;
         }

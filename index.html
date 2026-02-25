@@ -23,6 +23,24 @@
                     <input type="text" id="xUrl" placeholder="https://x.com/username/status/1234567890">
                 </div>
                 
+                <div class="input-group">
+                    <label>🖼️ 图片处理方式</label>
+                    <div class="options-group">
+                        <label class="option-label">
+                            <input type="radio" name="imageMode" value="auto" checked>
+                            <span>自动检测（推荐）</span>
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="imageMode" value="embed">
+                            <span>嵌入图片（桌面端）</span>
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="imageMode" value="link">
+                            <span>原图链接（移动端）</span>
+                        </label>
+                    </div>
+                </div>
+                
                 <button id="fetchBtn" class="btn primary">
                     <span class="btn-icon">📥</span>
                     提取文章
