@@ -454,9 +454,13 @@ class XToWechatConverter {
         }
 
         let textToRewrite = this.markdownText;
-        textToRewrite = textToRewrite.replace(/\[Image \d+\]/gi, '');
+        
         textToRewrite = textToRewrite.replace(/!\[.*?\]\(https?:\/\/[^)]+\)/gi, '');
-        textToRewrite = textToRewrite.replace(/\[!\[Image.*?\]\(https:\/\/[^)]+\)\]\(https:\/\/[^)]+\)/gi, '');
+        textToRewrite = textToRewrite.replace(/\[!\[.*?\]\(https?:\/\/[^)]+\)\]\(https?:\/\/[^)]+\)/gi, '');
+        textToRewrite = textToRewrite.replace(/\[Image\s*\d*:?\s*[^\]]*\]/gi, '');
+        textToRewrite = textToRewrite.replace(/\[!\[Image[^\]]*\][^\]]*\]/gi, '');
+        
+        console.log('Text after cleanup:', textToRewrite);
 
         if (!textToRewrite.trim()) {
             this.showToast('没有可洗稿的文本内容', 'error');
