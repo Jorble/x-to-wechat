@@ -11,21 +11,6 @@ class XToWechatConverter {
         return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
     }
     
-    shouldEmbedImages() {
-        const selectedMode = document.querySelector('input[name="imageMode"]:checked');
-        const mode = selectedMode ? selectedMode.value : 'auto';
-        
-        switch (mode) {
-            case 'embed':
-                return true;
-            case 'link':
-                return false;
-            case 'auto':
-            default:
-                return !this.isMobile;
-        }
-    }
-
     init() {
         this.bindEvents();
     }
@@ -33,6 +18,7 @@ class XToWechatConverter {
     bindEvents() {
         document.getElementById('fetchBtn').addEventListener('click', () => this.fetchXArticle());
         document.getElementById('copyBtn').addEventListener('click', () => this.copyToClipboard());
+        document.getElementById('rewriteBtn').addEventListener('click', () => this.rewriteContent());
     }
 
     async fetchXArticle() {
@@ -69,6 +55,7 @@ class XToWechatConverter {
             preview.innerHTML = this.formattedHTML;
             
             document.getElementById('copyBtn').disabled = false;
+            document.getElementById('rewriteBtn').disabled = false;
             
             fetchBtn.innerHTML = '<span class="btn-icon">📥</span> 重新提取';
             fetchBtn.disabled = false;
@@ -186,16 +173,13 @@ class XToWechatConverter {
                 
                 imageCount++;
                 
-                const useEmbed = this.shouldEmbedImages();
-                
-                if (useEmbed) {
-                    this.showToast(`正在下载图片 ${imageCount}/${totalImages}...`, 'info');
-                    const imageData = await this.downloadAndConvertImage(url || '');
-                    result.push(this.renderImage(imageData, alt));
-                } else {
-                    console.log('Using original image URL for mobile compatibility');
-                    result.push(this.renderImage(url, alt));
+                if (this.isMobile) {
+                    console.log('Mobile device - using embedded Data URL');
                 }
+                
+                this.showToast(`正在下载图片 ${imageCount}/${totalImages}...`, 'info');
+                const imageData = await this.downloadAndConvertImage(url || '');
+                result.push(this.renderImage(imageData, alt));
                 
                 i++;
                 continue;
@@ -461,6 +445,79 @@ class XToWechatConverter {
 
     renderHorizontalRule() {
         return `<hr style="margin: 30px 0; border: none; border-top: 2px solid #e1e8ed;">`;
+    }
+
+    async rewriteContent() {
+        if (!this.markdownText) {
+            this.showToast('没有可洗稿的内容', 'error');
+            return;
+        }
+
+        let textToRewrite = this.markdownText;
+        textToRewrite = textToRewrite.replace(/\[Image \d+\]/gi, '');
+        textToRewrite = textToRewrite.replace(/!\[.*?\]\(https?:\/\/[^)]+\)/gi, '');
+        textToRewrite = textToRewrite.replace(/\[!\[Image.*?\]\(https:\/\/[^)]+\)\]\(https:\/\/[^)]+\)/gi, '');
+
+        if (!textToRewrite.trim()) {
+            this.showToast('没有可洗稿的文本内容', 'error');
+            return;
+        }
+
+        const rewriteBtn = document.getElementById('rewriteBtn');
+        rewriteBtn.disabled = true;
+        rewriteBtn.innerHTML = '<span class="loading"></span> 洗稿中...';
+
+        this.showToast('正在洗稿中，请稍候...', 'info');
+
+        const systemPrompt = `你是文案洗稿专家，擅长对现有内容进行改写。
+
+## 规则
+1. 保持原文风格结构，尽可能像两篇文章，但是原文意思差不多。
+2. 遵循客户或品牌的指导方针。
+3. 文案中不要出现首先，其次，最后，所以等总结词。
+4. 不要出现哎呀，惊讶词，不要出现表情符号。
+5. 要让读者有看下去的欲望，结尾可以适当增加下网友和自己的观点。
+6. 只返回改写后的内容，不要有任何解释或前缀。
+7. **必须保留原文中的所有网址，不要删除任何链接**
+
+请对以下文案进行洗稿改写，保持原文结构不变，只修改文本内容，同时保留所有网址：`;
+
+        try {
+            const response = await fetch('/api/rewrite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: textToRewrite
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('洗稿失败');
+            }
+
+            const data = await response.json();
+            const rewrittenText = data.choices?.[0]?.message?.content || '';
+            
+            if (!rewrittenText) {
+                throw new Error('洗稿返回为空');
+            }
+            
+            this.formattedHTML = await this.parseMarkdownForWechat(rewrittenText);
+            
+            const preview = document.getElementById('preview');
+            preview.innerHTML = this.formattedHTML;
+            
+            this.showToast('✨ 洗稿完成！可以一键复制了');
+            
+        } catch (error) {
+            console.error('Rewrite failed:', error);
+            this.showToast('洗稿失败，请重试', 'error');
+        } finally {
+            rewriteBtn.disabled = false;
+            rewriteBtn.innerHTML = '<span class="btn-icon">✨</span> 洗稿';
+        }
     }
 
     copyToClipboard() {

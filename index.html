@@ -23,24 +23,6 @@
                     <input type="text" id="xUrl" placeholder="https://x.com/username/status/1234567890">
                 </div>
                 
-                <div class="input-group">
-                    <label>🖼️ 图片处理方式</label>
-                    <div class="options-group">
-                        <label class="option-label">
-                            <input type="radio" name="imageMode" value="auto" checked>
-                            <span>自动检测（推荐）</span>
-                        </label>
-                        <label class="option-label">
-                            <input type="radio" name="imageMode" value="embed">
-                            <span>嵌入图片（桌面端）</span>
-                        </label>
-                        <label class="option-label">
-                            <input type="radio" name="imageMode" value="link">
-                            <span>原图链接（移动端）</span>
-                        </label>
-                    </div>
-                </div>
-                
                 <button id="fetchBtn" class="btn primary">
                     <span class="btn-icon">📥</span>
                     提取文章
@@ -50,10 +32,16 @@
             <div class="preview-section">
                 <div class="preview-header">
                     <h2>👀 预览效果</h2>
-                    <button id="copyBtn" class="btn success" disabled>
-                        <span class="btn-icon">📋</span>
-                        一键复制
-                    </button>
+                    <div class="btn-group">
+                        <button id="rewriteBtn" class="btn info" disabled>
+                            <span class="btn-icon">✨</span>
+                            洗稿
+                        </button>
+                        <button id="copyBtn" class="btn success" disabled>
+                            <span class="btn-icon">📋</span>
+                            一键复制
+                        </button>
+                    </div>
                 </div>
                 <div id="preview" class="preview-content">
                     <div class="placeholder">
@@ -79,12 +67,17 @@
                 <div class="flow-arrow">→</div>
                 <div class="flow-step">
                     <div class="flow-dot">3</div>
-                    <div class="flow-text">点击一键复制</div>
+                    <div class="flow-text">可选：点击洗稿</div>
                 </div>
                 <div class="flow-arrow">→</div>
                 <div class="flow-step">
                     <div class="flow-dot">4</div>
-                    <div class="flow-text">粘贴到公众号编辑器</div>
+                    <div class="flow-text">点击一键复制</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-dot">5</div>
+                    <div class="flow-text">粘贴到公众号</div>
                 </div>
             </div>
         </div>

@@ -2,6 +2,14 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/image",
+      "destination": "/api/image.js"
+    },
+    {
+      "source": "/api/rewrite",
+      "destination": "/api/rewrite.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
